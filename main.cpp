@@ -13,6 +13,8 @@ constexpr int SCAN_OFFSET = 400;
 constexpr double GAUSIAN_BLUR_SIGMA = 1.;
 constexpr int ROI_HEIGHT = 20;
 constexpr int ROI_Y = SCAN_OFFSET - (ROI_HEIGHT / 2);
+const cv::Scalar BLUE = cv::Scalar(255, 0, 0);
+const cv::Scalar YELLOW = cv::Scalar(0, 255, 255);
 
 std::vector<cv::Point2f> find_edges(const cv::Mat &img, bool isLeft = true) {
   cv::Mat img32, blr, dx;
@@ -71,17 +73,15 @@ int main() {
 
     // Display
     cv::drawMarker(videoFrame, cv::Point(cvRound(ptsL[0].x), SCAN_OFFSET),
-                   cv::Scalar(0,255,255), cv::MARKER_TILTED_CROSS, 10, 2,
-                   cv::LINE_AA);
-    cv::drawMarker(videoFrame, cv::Point(cvRound(ptsL[1].x), SCAN_OFFSET),
-                   cv::Scalar(255, 0, 0), cv::MARKER_TILTED_CROSS, 10, 2,
-                   cv::LINE_AA);
+                   YELLOW, cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
+    cv::drawMarker(videoFrame, cv::Point(cvRound(ptsL[1].x), SCAN_OFFSET), BLUE,
+                   cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
     cv::drawMarker(videoFrame,
-                   cv::Point(cvRound(ptsR[0].x) + width, SCAN_OFFSET),
-        cv::Scalar(0, 255, 255), cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
-    cv::drawMarker(
-        videoFrame, cv::Point(cvRound(ptsR[1].x) + width, SCAN_OFFSET),
-        cv::Scalar(255, 0, 0), cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
+                   cv::Point(cvRound(ptsR[0].x) + width, SCAN_OFFSET), YELLOW,
+                   cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
+    cv::drawMarker(videoFrame,
+                   cv::Point(cvRound(ptsR[1].x) + width, SCAN_OFFSET), BLUE,
+                   cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
 
     cv::imshow("video", videoFrame);
     int k = cv::waitKey(1);
