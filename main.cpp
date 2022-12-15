@@ -9,7 +9,7 @@ constexpr int ERROR_LOADING_VIDEO = 1 << 0;
 // constants
 constexpr char VIDEO_FILENAME[] = "Sub_project.avi";
 constexpr int SCAN_OFFSET = 400;
-constexpr double GAUSIAN_BLUR_SIGMA = 1.;
+constexpr double GAUSIAN_BLUR_SIGMA = 2.;
 constexpr int ROI_HEIGHT = 20;
 constexpr int ROI_Y = SCAN_OFFSET - (ROI_HEIGHT / 2);
 constexpr int MEMO_NUM = 3;
