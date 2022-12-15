@@ -1,0 +1,10 @@
+# Visual Studio
+.vs/
+*.sln
+*.vcx*
+
+# Builds
+x64/
+
+# Resources
+*.avi
