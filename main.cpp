@@ -8,7 +8,7 @@ constexpr int ERROR_LOADING_VIDEO = 1 << 0;
 // constants
 constexpr char VIDEO_FILENAME[] = "Sub_project.avi";
 constexpr int SCAN_OFFSET = 400;
-constexpr double GAUSIAN_BLUR_SIGMA = 1.;
+constexpr double GAUSIAN_BLUR_SIGMA = 2.;
 constexpr int ROI_HEIGHT = 20;
 constexpr int ROI_Y = SCAN_OFFSET - (ROI_HEIGHT / 2);
 const cv::Scalar BLUE = cv::Scalar(255, 0, 0);
@@ -83,8 +83,8 @@ int main() {
     std::vector<int> pxL = filterX(ptsL, 0, width);
     std::vector<int> pxR = filterX(ptsR, width, videoFrame.cols - 1, false);
 
-     std::cout << pxL[0] << ' ' << pxL[1] << " | ";
-     std::cout << pxR[0] << ' ' << pxR[1] << '\n';
+    std::cout << pxL[0] << ' ' << pxL[1] << " | ";
+    std::cout << pxR[0] << ' ' << pxR[1] << '\n';
 
     // Display
     cv::drawMarker(videoFrame, cv::Point(pxL[0], SCAN_OFFSET), YELLOW,
