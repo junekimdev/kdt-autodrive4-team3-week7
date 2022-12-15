@@ -83,6 +83,8 @@ int main() {
                    cv::Point(cvRound(ptsR[1].x) + width, SCAN_OFFSET), BLUE,
                    cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
 
+    cv::line(videoFrame, cv::Point(0, SCAN_OFFSET),
+             cv::Point(videoFrame.cols, SCAN_OFFSET), BLUE);
     cv::imshow("video", videoFrame);
     int k = cv::waitKey(1);
     if (k == 27 || k == ' ') break;
