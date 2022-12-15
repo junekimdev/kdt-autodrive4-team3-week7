@@ -1,4 +1,5 @@
 #include <iostream>
+#include <numeric>
 
 #include "opencv2/opencv.hpp"
 
@@ -11,6 +12,7 @@ constexpr int SCAN_OFFSET = 400;
 constexpr double GAUSIAN_BLUR_SIGMA = 1.;
 constexpr int ROI_HEIGHT = 20;
 constexpr int ROI_Y = SCAN_OFFSET - (ROI_HEIGHT / 2);
+constexpr int MEMO_NUM = 3;
 const cv::Scalar BLUE = cv::Scalar(255, 0, 0);
 const cv::Scalar YELLOW = cv::Scalar(0, 255, 255);
 
@@ -50,6 +52,13 @@ std::vector<cv::Point> find_edges(const cv::Mat& img,
   return {leftsidePt, rightsidePt};
 }
 
+int movingAvg(std::vector<int>& memo, int value) {
+  memo.erase(memo.begin());
+  memo.emplace_back(value);
+  int sumMemo = std::accumulate(memo.begin(), memo.end(), 0);
+  return cvRound(sumMemo / (float)memo.size());
+}
+
 int main() {
   int returnCode = 0;
 
@@ -59,6 +68,9 @@ int main() {
     returnCode |= ERROR_LOADING_VIDEO;
   }
   if (returnCode) return returnCode;
+
+  std::vector<int> pxLMemo1(MEMO_NUM, 0), pxLMemo2(MEMO_NUM, 0),
+      pxRMemo1(MEMO_NUM, 639), pxRMemo2(MEMO_NUM, 639);
 
   while (1) {
     cv::Mat videoFrame;
@@ -83,17 +95,25 @@ int main() {
     std::vector<int> pxL = filterX(ptsL, 0, width);
     std::vector<int> pxR = filterX(ptsR, width, videoFrame.cols - 1, false);
 
-     std::cout << pxL[0] << ' ' << pxL[1] << " | ";
-     std::cout << pxR[0] << ' ' << pxR[1] << '\n';
+    // std::cout << pxL[0] << ' ' << pxL[1] << " | ";
+    // std::cout << pxR[0] << ' ' << pxR[1] << '\n';
+
+    int l1 = movingAvg(pxLMemo1, pxL[0]);
+    int l2 = movingAvg(pxLMemo2, pxL[1]);
+    int r1 = movingAvg(pxRMemo1, pxR[0]);
+    int r2 = movingAvg(pxRMemo2, pxR[1]);
+
+    std::cout << l1 << ' ' << l2 << " | ";
+    std::cout << r1 << ' ' << r2 << '\n';
 
     // Display
-    cv::drawMarker(videoFrame, cv::Point(pxL[0], SCAN_OFFSET), YELLOW,
+    cv::drawMarker(videoFrame, cv::Point(l1, SCAN_OFFSET), YELLOW,
                    cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
-    cv::drawMarker(videoFrame, cv::Point(pxL[1], SCAN_OFFSET), BLUE,
+    cv::drawMarker(videoFrame, cv::Point(l2, SCAN_OFFSET), BLUE,
                    cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
-    cv::drawMarker(videoFrame, cv::Point(pxR[0], SCAN_OFFSET), YELLOW,
+    cv::drawMarker(videoFrame, cv::Point(r1, SCAN_OFFSET), YELLOW,
                    cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
-    cv::drawMarker(videoFrame, cv::Point(pxR[1], SCAN_OFFSET), BLUE,
+    cv::drawMarker(videoFrame, cv::Point(r2, SCAN_OFFSET), BLUE,
                    cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
 
     cv::line(videoFrame, cv::Point(0, SCAN_OFFSET),
