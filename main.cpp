@@ -14,28 +14,6 @@ constexpr double GAUSIAN_BLUR_SIGMA = 1.;
 constexpr int ROI_HEIGHT = 20;
 constexpr int ROI_Y = SCAN_OFFSET - (ROI_HEIGHT / 2);
 
-float getSubPixelX(const cv::Mat &roi, const cv::Point &loc) {
-  // Get 3 values of [-1, 0, +1] from loc.x
-  float pX = roi.at<float>(loc.x - 1);
-  float pY = roi.at<float>(loc.x);
-  float pZ = roi.at<float>(loc.x + 1);
-
-  // # Calculate value with subpixel accuracy
-  // EQ1: y = a*x^2 + b*x + c
-  // # Put values of [-1, pX], [0, pY], [1, pZ] in EQ1. (offset by loc.x)
-  // a = (pX - 2*pY + pZ) / 2
-  // b = (pZ - pX) / 2
-  // c = pY
-  //
-  // # EQ1 has its max(or min) value when (2*a*x + b = 0) <== df/dx
-  // EQ2: x = -b / (2*a)
-  // # Put values of a,b in EQ2
-  // x = (pX - pZ) / (2 * pX - 4 * pY + 2 * pZ)
-  //
-  // # Undo offset by loc.x and return
-  return loc.x + (pX - pZ) / (2 * pX - 4 * pY + 2 * pZ);
-}
-
 std::vector<cv::Point2f> find_edges(const cv::Mat &img, bool isLeft = true) {
   cv::Mat img32, blr, dx;
   img.convertTo(img32, CV_32F);
@@ -56,10 +34,8 @@ std::vector<cv::Point2f> find_edges(const cv::Mat &img, bool isLeft = true) {
     if (maxloc.x < minloc.x) maxloc.x = MAX_VAL;
   }
 
-  cv::Point2f maxP(getSubPixelX(roi, maxloc), y2);
-  cv::Point2f minP(getSubPixelX(roi, minloc), y2);
   // std::cout << maxP << ' ' << minP << '\n';
-  return {maxP, minP};
+  return {maxloc, minloc};
 }
 
 int main() {
