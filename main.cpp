@@ -13,8 +13,6 @@ constexpr int SCAN_OFFSET = 400;
 constexpr double GAUSIAN_BLUR_SIGMA = 1.;
 constexpr int ROI_HEIGHT = 20;
 constexpr int ROI_Y = SCAN_OFFSET - (ROI_HEIGHT / 2);
-constexpr cv::Scalar COLOR_BLUE = cv::Scalar(255, 0, 0);
-constexpr cv::Scalar COLOR_YELLOW = cv::Scalar(0, 255, 255);
 
 float getSubPixelX(const cv::Mat &roi, const cv::Point &loc) {
   // Get 3 values of [-1, 0, +1] from loc.x
@@ -97,15 +95,17 @@ int main() {
 
     // Display
     cv::drawMarker(videoFrame, cv::Point(cvRound(ptsL[0].x), SCAN_OFFSET),
-                   COLOR_YELLOW, cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
+                   cv::Scalar(0,255,255), cv::MARKER_TILTED_CROSS, 10, 2,
+                   cv::LINE_AA);
     cv::drawMarker(videoFrame, cv::Point(cvRound(ptsL[1].x), SCAN_OFFSET),
-                   COLOR_BLUE, cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
+                   cv::Scalar(255, 0, 0), cv::MARKER_TILTED_CROSS, 10, 2,
+                   cv::LINE_AA);
     cv::drawMarker(videoFrame,
                    cv::Point(cvRound(ptsR[0].x) + width, SCAN_OFFSET),
-                   COLOR_YELLOW, cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
-    cv::drawMarker(videoFrame,
-                   cv::Point(cvRound(ptsR[1].x) + width, SCAN_OFFSET),
-                   COLOR_BLUE, cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
+        cv::Scalar(0, 255, 255), cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
+    cv::drawMarker(
+        videoFrame, cv::Point(cvRound(ptsR[1].x) + width, SCAN_OFFSET),
+        cv::Scalar(255, 0, 0), cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
 
     cv::imshow("video", videoFrame);
     int k = cv::waitKey(1);
