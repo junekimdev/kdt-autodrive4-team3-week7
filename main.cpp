@@ -1,9 +1,11 @@
 #include <iostream>
+#include <fstream>
 
 #include "opencv2/opencv.hpp"
 
 // Error codes
 constexpr int ERROR_LOADING_VIDEO = 1 << 0;
+constexpr int ERROR_OPENING_FILE_OUTPUT = 1 << 1;
 
 // constants
 constexpr char VIDEO_FILENAME[] = "Sub_project.avi";
@@ -60,6 +62,9 @@ int main() {
   }
   if (returnCode) return returnCode;
 
+  std::vector<std::vector<int>> outputStore;
+  int videoFrameConunter = 0;
+
   while (1) {
     cv::Mat videoFrame;
     video >> videoFrame;
@@ -86,6 +91,15 @@ int main() {
     std::cout << pxL[0] << ' ' << pxL[1] << " | ";
     std::cout << pxR[0] << ' ' << pxR[1] << '\n';
 
+
+    // Output
+    if (videoFrameConunter && !(videoFrameConunter % 30)) {
+      int left = cvRound((pxL[0] + pxL[1]) / 2.f);
+      int right = cvRound((pxR[0] + pxR[1]) / 2.f);
+      outputStore.emplace_back(std::vector<int>{left, right});
+    }
+    videoFrameConunter++;
+
     // Display
     cv::drawMarker(videoFrame, cv::Point(pxL[0], SCAN_OFFSET), YELLOW,
                    cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
@@ -105,5 +119,24 @@ int main() {
 
   video.release();
   cv::destroyAllWindows();
+
+  // Create a output file
+  std::cout << "Creating a output file..." << '\n';
+  std::ofstream file;
+  file.open("result.csv", std::ofstream::out);
+  if (!file.is_open()) {
+    std::cerr << "Failed to create a file for output" << '\n';
+    returnCode |= ERROR_OPENING_FILE_OUTPUT;
+  }
+  if (returnCode) return returnCode;
+
+  std::cout << "Output file is opened; Now writing..." << '\n';
+
+  for (const auto& out : outputStore) {
+    file << out[0] << ',' << out[1] << '\n';
+  }
+  file.close();
+  std::cout << "Output file: result.csv has been created successfully" << '\n';
+
   return returnCode;
 }
