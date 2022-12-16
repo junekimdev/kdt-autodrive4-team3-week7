@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include <numeric>
 
@@ -5,6 +6,7 @@
 
 // Error codes
 constexpr int ERROR_LOADING_VIDEO = 1 << 0;
+constexpr int ERROR_OPENING_FILE_OUTPUT = 1 << 1;
 
 // constants
 constexpr char VIDEO_FILENAME[] = "Sub_project.avi";
@@ -72,6 +74,9 @@ int main() {
   std::vector<int> pxLMemo1(MEMO_NUM, 0), pxLMemo2(MEMO_NUM, 0),
       pxRMemo1(MEMO_NUM, 639), pxRMemo2(MEMO_NUM, 639);
 
+  std::vector<std::vector<int>> outputStore;
+  int videoFrameConunter = 0;
+
   while (1) {
     cv::Mat videoFrame;
     video >> videoFrame;
@@ -106,6 +111,14 @@ int main() {
     std::cout << l1 << ' ' << l2 << " | ";
     std::cout << r1 << ' ' << r2 << '\n';
 
+    // Output
+    if (videoFrameConunter && !(videoFrameConunter % 30)) {
+      int left = cvRound((l1 + l2) / 2.f);
+      int right = cvRound((r1 + r2) / 2.f);
+      outputStore.emplace_back(std::vector<int>{left, right});
+    }
+    videoFrameConunter++;
+
     // Display
     cv::drawMarker(videoFrame, cv::Point(l1, SCAN_OFFSET), YELLOW,
                    cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
@@ -125,5 +138,24 @@ int main() {
 
   video.release();
   cv::destroyAllWindows();
+
+  // Create a output file
+  std::cout << "Creating a output file..." << '\n';
+  std::ofstream file;
+  file.open("result.csv", std::ofstream::out);
+  if (!file.is_open()) {
+    std::cerr << "Failed to create a file for output" << '\n';
+    returnCode |= ERROR_OPENING_FILE_OUTPUT;
+  }
+  if (returnCode) return returnCode;
+
+  std::cout << "Output file is opened; Now writing..." << '\n';
+
+  for (const auto& out : outputStore) {
+    file << out[0] << ',' << out[1] << '\n';
+  }
+  file.close();
+  std::cout << "Output file: result.csv has been created successfully" << '\n';
+
   return returnCode;
 }
