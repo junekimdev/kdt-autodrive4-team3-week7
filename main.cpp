@@ -1,5 +1,6 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <numeric>
 #include <string>
 
 #include "opencv2/opencv.hpp"
@@ -12,6 +13,9 @@ constexpr int ERROR_OPENING_FILE_ANSWER = 1 << 2;
 // constants
 constexpr char VIDEO_FILENAME[] = "Sub_project.avi";
 constexpr int SCAN_OFFSET = 400;
+constexpr int LEFTMOST = 0;
+constexpr int RIGHTMOST = 639;
+constexpr int MAX_DIFF = 50;
 constexpr double GAUSIAN_BLUR_SIGMA = 2.;
 constexpr int ROI_HEIGHT = 20;
 constexpr int ROI_Y = SCAN_OFFSET - (ROI_HEIGHT / 2);
@@ -100,9 +104,14 @@ int main() {
   }
   answers.close();
 
+  std::vector<int> answerLok;
+  std::vector<int> answerRok;
+
   std::vector<std::vector<int>> outputStore;
   int videoFrameConunter = 0;
   int answerIdx = 0;
+  int prevLeft = LEFTMOST;
+  int prevRight = RIGHTMOST;
 
   while (1) {
     cv::Mat videoFrame;
@@ -127,27 +136,57 @@ int main() {
     std::vector<int> pxL = filterX(ptsL, 0, width);
     std::vector<int> pxR = filterX(ptsR, width, videoFrame.cols - 1, false);
 
-    std::cout << pxL[0] << ' ' << pxL[1] << " | ";
-    std::cout << pxR[0] << ' ' << pxR[1] << '\n';
+    // std::cout << pxL[0] << ' ' << pxL[1] << " | ";
+    // std::cout << pxR[0] << ' ' << pxR[1] << '\n';
 
-    // Output
+    int left = cvRound((pxL[0] + pxL[1]) / 2.f);
+    int right = cvRound((pxR[0] + pxR[1]) / 2.f);
+    if (left == LEFTMOST && (prevLeft - left) > MAX_DIFF) {
+      //left = cvRound(prevLeft * .8 + left * .2);
+      left = prevLeft;
+    }
+    if (right == RIGHTMOST && (right - prevRight) > MAX_DIFF) {
+      //right = cvRound(prevRight * .8 + right * .2);
+      right = prevRight;
+    }
+
     if (videoFrameConunter && !(videoFrameConunter % 30)) {
-      int left = cvRound((pxL[0] + pxL[1]) / 2.f);
-      int right = cvRound((pxR[0] + pxR[1]) / 2.f);
+      // Output
       outputStore.emplace_back(std::vector<int>{left, right});
+      prevLeft = left;
+      prevRight = right;
 
-      
-    // Display
-      cv::drawMarker(videoFrame, cv::Point(pxL[0], SCAN_OFFSET), YELLOW,
-                     cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
-      cv::drawMarker(videoFrame, cv::Point(pxL[1], SCAN_OFFSET), BLUE,
-                     cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
-      cv::drawMarker(videoFrame, cv::Point(pxR[0], SCAN_OFFSET), YELLOW,
-                     cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
-      cv::drawMarker(videoFrame, cv::Point(pxR[1], SCAN_OFFSET), BLUE,
-                     cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
+      // Display
+      bool okL = answerStore[answerIdx][0] <= left &&
+                 answerStore[answerIdx][1] >= left;
+      bool okR = answerStore[answerIdx][2] <= right &&
+                 answerStore[answerIdx][3] >= right;
+      if (!okL) {
+        int d = answerStore[answerIdx][1] - answerStore[answerIdx][0];
+        std::cout << "NG_L: " << d - left << '\n';
+      }
+      if (!okR) {
+        int d = answerStore[answerIdx][3] - answerStore[answerIdx][2];
+        std::cout << "NG_R: " << d - right << '\n';
+      }
+      // cv::drawMarker(videoFrame, cv::Point(pxL[0], SCAN_OFFSET), YELLOW,
+      //                cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
+      // cv::drawMarker(videoFrame, cv::Point(pxL[1], SCAN_OFFSET), BLUE,
+      //                cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
+      // cv::drawMarker(videoFrame, cv::Point(pxR[0], SCAN_OFFSET), YELLOW,
+      //                cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
+      // cv::drawMarker(videoFrame, cv::Point(pxR[1], SCAN_OFFSET), BLUE,
+      //                cv::MARKER_TILTED_CROSS, 10, 2, cv::LINE_AA);
+      cv::drawMarker(videoFrame, cv::Point(left, SCAN_OFFSET),
+                     okL ? BLUE : BLACK, cv::MARKER_TILTED_CROSS, 10, 2,
+                     cv::LINE_AA);
+      cv::drawMarker(videoFrame, cv::Point(right, SCAN_OFFSET),
+                     okR ? BLUE : BLACK, cv::MARKER_TILTED_CROSS, 10, 2,
+                     cv::LINE_AA);
 
       // Answers
+      answerLok.emplace_back(okL);
+      answerRok.emplace_back(okR);
       cv::drawMarker(videoFrame,
                      cv::Point(answerStore[answerIdx][0], SCAN_OFFSET), BLACK,
                      cv::MARKER_STAR, 5, 1, cv::LINE_AA);
@@ -174,6 +213,15 @@ int main() {
 
   video.release();
   cv::destroyAllWindows();
+
+  std::cout << "Left OK: "
+            << std::accumulate(answerLok.begin(), answerLok.end(), 0) /
+                   (double)answerLok.size()
+            << '\n';
+  std::cout << "Right OK: "
+            << std::accumulate(answerRok.begin(), answerRok.end(), 0) /
+                   (double)answerRok.size()
+            << '\n';
 
   // Create a output file
   std::cout << "Creating a output file..." << '\n';
